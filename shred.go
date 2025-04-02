@@ -1,12 +1,8 @@
 package main
 
-// Goal is to implement a Shred(path) function that overwites a file with random data 3 times and then deletes it.
-
 import (
-	"math/rand"
-	"time"
+	"crypto/rand"
 	"fmt"
-//	"io"
 	"os"
 )
 
@@ -19,32 +15,35 @@ func check(e error) {
 }
 
 // Shred overwrites the file at the given path with random data and then deletes it.
-func Shred(path string) error {
-	rand.Seed(time.Now().UnixNano()) // Seed the random number generator (may be unneccesary)
-	
+func Shred(path string) error {	
 	fi, err := os.Stat(path)
 	check(err)
 	fileSize := fi.Size()
 
-	fmt.Println(path + " Has file size of", fileSize, "bytes")
 	for range 3 {
 		// Open file for writing (assuming it has write priveleges)
 		// If not could either choose to return error or use Chmod function
+		// Going to choose to just allow error for now
 		f, err := os.OpenFile(path, os.O_WRONLY, 0666)
 		check(err)
-		//defer f.Close()
 
 		// Write file with new data
-		_, err = f.Write([]byte("Hello World!"))
+		buff := make([]byte, fileSize)
+		_, err = rand.Read(buff)
 		check(err)
-		f.Close()
-	}
 
-	fmt.Println("Succesfully overwrote: " + path)
+		_, err = f.Write(buff)
+		check(err)
+
+		err = f.Close()
+		check(err)
+	}
 	
 	// Now delete the file
-	// Note: may be tricky to test if it's using random data if it get's deleted at the end... 
-	//err = os.Remove(path)
+	err = os.Remove(path)
+	check(err)
+	
+	fmt.Println("Succesfully shredded: " + path)
 
 	return err
 }
